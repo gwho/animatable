@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Three.js SEO Runner Game</title>
+  <meta name="description" content="A simple 3D endless runner game built with three.js" />
+  <style>
+    body { margin: 0; font-family: sans-serif; text-align: center; }
+    header { position: absolute; top: 0; width: 100%; z-index: 1; color: #fff; padding: 10px; }
+    canvas { display: block; }
+    #info { position: absolute; top: 40px; left: 10px; color: white; z-index: 1; }
+  </style>
+  <script src="https://unpkg.com/three@0.154.0/build/three.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Three.js Runner Game</h1>
+  </header>
+  <main>
+    <p id="info">Use ←/→ or A/D to move, Space to jump.</p>
+    <div id="game"></div>
+  </main>
+  <script>
+    // Create scene, camera and renderer
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('game').appendChild(renderer.domElement);
+
+    // Lighting
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(0, 20, 10);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0x404040));
+
+    // Runner cube
+    const runnerGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const runnerMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+    const runner = new THREE.Mesh(runnerGeometry, runnerMaterial);
+    runner.position.y = 0.5;
+    scene.add(runner);
+
+    // Ground plane
+    const planeGeometry = new THREE.PlaneGeometry(10, 1000);
+    const planeMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+    const ground = new THREE.Mesh(planeGeometry, planeMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+
+    // Obstacles array
+    let obstacles = [];
+    function addObstacle(z) {
+      const size = 0.5 + Math.random();
+      const geometry = new THREE.BoxGeometry(size, size, size);
+      const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+      const obstacle = new THREE.Mesh(geometry, material);
+      obstacle.position.x = (Math.random() - 0.5) * 4;
+      obstacle.position.y = size / 2;
+      obstacle.position.z = z;
+      scene.add(obstacle);
+      obstacles.push(obstacle);
+    }
+
+    // Initial obstacles
+    for (let i = 5; i < 200; i += 5) addObstacle(-i);
+
+    // Player controls
+    let speed = 0.2;
+    let lane = 0;
+    let jumping = false;
+    let jumpVelocity = 0;
+    function handleKey(event) {
+      if (event.code === 'ArrowLeft' || event.code === 'KeyA') lane = Math.max(-2, lane - 1);
+      if (event.code === 'ArrowRight' || event.code === 'KeyD') lane = Math.min(2, lane + 1);
+      if (event.code === 'Space' && !jumping) {
+        jumping = true;
+        jumpVelocity = 0.25;
+      }
+    }
+    window.addEventListener('keydown', handleKey);
+
+    camera.position.set(0, 2, 5);
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Move the camera forward
+      camera.position.z -= speed;
+      runner.position.x += (lane - runner.position.x) * 0.2;
+
+      // Handle jumping
+      if (jumping) {
+        runner.position.y += jumpVelocity;
+        jumpVelocity -= 0.01;
+        if (runner.position.y <= 0.5) {
+          runner.position.y = 0.5;
+          jumping = false;
+        }
+      }
+
+      // Manage obstacles
+      obstacles = obstacles.filter(o => {
+        if (o.position.z > camera.position.z + 5) {
+          scene.remove(o);
+          return false;
+        }
+        return true;
+      });
+      if (obstacles.length < 40) {
+        addObstacle(camera.position.z - 200);
+      }
+
+      // Simple collision detection
+      for (const o of obstacles) {
+        if (Math.abs(o.position.z - runner.position.z) < 1 &&
+            Math.abs(o.position.x - runner.position.x) < 0.75 &&
+            runner.position.y < o.position.y + 0.5) {
+          speed = 0; // stop on collision
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
