@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ice: #f97316;
+  --color-ev: #22d3ee;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
