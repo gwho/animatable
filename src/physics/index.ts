@@ -3,5 +3,6 @@ export * from './math';
 export * from './powertrains';
 export * from './drivetrain';
 export * from './vehicleDynamics';
+export * from './curves';
 export * from './simulationStore';
 export type * from './types';
