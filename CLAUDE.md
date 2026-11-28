@@ -51,3 +51,6 @@ An interactive engineering learning application comparing the torque curves, dri
 - `npm run typecheck` — Run `tsc --noEmit` with zero errors
 - `npm run build` — Verify production bundle builds cleanly
 - `npm run dev` — Dev server (opens `/workbench.html`)
+
+## Continuous Integration
+`.github/workflows/ci.yml` runs `npm ci → typecheck → test → build` on Node 22 for every pull request (any base branch) and on pushes to `master`. Keep all three verification commands green before pushing.
