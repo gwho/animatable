@@ -12,7 +12,7 @@ import {
 } from '../../../physics';
 import { simulationStore as store } from '../../../app/simulation';
 import { useAnimationFrame } from '../../../hooks/useAnimationFrame';
-import { formatInt, setAttr, setText } from './format';
+import { formatInt, setAttr, setText } from '../../shared/format';
 
 // Plot geometry in viewBox units (scaled responsively by the SVG).
 const W = 1_000;

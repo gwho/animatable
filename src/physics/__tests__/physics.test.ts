@@ -321,6 +321,37 @@ describe('architectural invariants', () => {
   });
 });
 
+describe('clutch & input-shaft telemetry', () => {
+  it('input shaft lags the engine while slipping, then matches once locked', () => {
+    const store = createSimulationStore({ initialControls: { throttle: 1 } });
+    const { ice } = store.getMutableState();
+    store.step();
+    expect(ice.clutchState).toBe('slipping');
+    expect(ice.inputShaftRpm).toBeLessThan(ice.engineRpm);
+    for (let i = 0; i < 600 && ice.clutchState !== 'locked'; i += 1) store.step();
+    expect(ice.clutchState).toBe('locked');
+    expect(ice.inputShaftRpm).toBe(ice.engineRpm);
+  });
+
+  it('accumulates clutch slip energy and clears it on reset', () => {
+    const store = createSimulationStore({ initialControls: { throttle: 1, iceGearMode: 'locked-4th' } });
+    runSteps(store, 120);
+    const { ice } = store.getMutableState();
+    expect(ice.clutchEnergyJ).toBeGreaterThan(10_000);
+    expect(ice.clutchTempC).toBeGreaterThan(40);
+    store.reset();
+    expect(store.getMutableState().ice.clutchEnergyJ).toBe(0);
+  });
+
+  it('input shaft free-spins with the engine in neutral', () => {
+    const store = createSimulationStore({ initialControls: { gearSelector: 'N', throttle: 0.5 } });
+    runSteps(store, 60);
+    const { ice } = store.getMutableState();
+    expect(ice.inputShaftRpm).toBe(ice.engineRpm);
+    expect(ice.velocityMps).toBe(0);
+  });
+});
+
 describe('store scheduling edge cases', () => {
   function fakeScheduler() {
     const queue = new Map<number, (now: number) => void>();

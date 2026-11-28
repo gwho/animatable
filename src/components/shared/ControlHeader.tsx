@@ -1,6 +1,6 @@
-import { gradePercentToAngleRad, type IceClutchMode, type IceGearMode, type UiSnapshot } from '../../../physics';
-import { simulationStore as store } from '../../../app/simulation';
-import { Button, Segmented, Slider } from '../../ui/controls';
+import { gradePercentToAngleRad, type IceClutchMode, type IceGearMode, type UiSnapshot } from '../../physics';
+import { simulationStore as store } from '../../app/simulation';
+import { Button, Segmented, Slider } from '../ui/controls';
 
 const GEARBOX_OPTIONS = [
   { value: 'auto', label: 'Auto-Shift 1–6' },
