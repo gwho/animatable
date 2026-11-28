@@ -320,3 +320,66 @@ describe('architectural invariants', () => {
     }
   });
 });
+
+describe('store scheduling edge cases', () => {
+  function fakeScheduler() {
+    const queue = new Map<number, (now: number) => void>();
+    let nextId = 1;
+    return {
+      queue,
+      scheduler: {
+        request: (cb: (now: number) => void) => {
+          const id = nextId++;
+          queue.set(id, cb);
+          return id;
+        },
+        cancel: (id: number) => {
+          queue.delete(id);
+        },
+      },
+      flush(now: number) {
+        const pending = [...queue.values()];
+        queue.clear();
+        pending.forEach((cb) => cb(now));
+      },
+    };
+  }
+
+  it('keeps exactly one pending frame when a step listener pauses and resumes', () => {
+    const fake = fakeScheduler();
+    const store = createSimulationStore({ scheduler: fake.scheduler });
+    let bounced = false;
+    store.subscribeStep(() => {
+      if (bounced) return;
+      bounced = true;
+      store.pause();
+      store.play();
+    });
+    store.play();
+    fake.flush(0);
+    fake.flush(1000 / 60);
+    expect(bounced).toBe(true);
+    expect(fake.queue.size).toBe(1);
+    store.pause();
+    expect(fake.queue.size).toBe(0);
+  });
+
+  it('notifies step listeners once per fixed step inside advance()', () => {
+    const store = createSimulationStore({ initialControls: { timeScale: 2 } });
+    const seen: number[] = [];
+    store.subscribeStep((s) => seen.push(s.stepCount));
+    store.play();
+    expect(store.advance(0.05)).toBe(6);
+    expect(seen).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  it('stops stepping inside advance() as soon as a listener pauses', () => {
+    const store = createSimulationStore({ initialControls: { timeScale: 2 } });
+    store.subscribeStep((s) => {
+      if (s.stepCount === 2) store.pause();
+    });
+    store.play();
+    expect(store.advance(0.05)).toBe(2);
+    expect(store.getMutableState().stepCount).toBe(2);
+  });
+});

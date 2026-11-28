@@ -288,7 +288,9 @@ export function createSimulationStore(options: SimulationStoreOptions = {}): Sim
     const elapsedS = lastFrameMs === null ? 0 : (nowMs - lastFrameMs) / 1000;
     lastFrameMs = nowMs;
     store.advance(elapsedS);
-    if (state.isPlaying) frameHandle = scheduler.request(onFrame);
+    // A step listener may have paused + resumed during advance(), which already
+    // scheduled a frame; never queue a second one.
+    if (state.isPlaying && frameHandle === null) frameHandle = scheduler.request(onFrame);
   }
 
   function stopScheduler(): void {
@@ -339,16 +341,16 @@ export function createSimulationStore(options: SimulationStoreOptions = {}): Sim
       const elapsed = clamp(finiteOr(realElapsedS, 0), 0, MAX_STEPS_PER_ADVANCE * FIXED_DT);
       accumulatorS += elapsed * state.controls.timeScale;
       let steps = 0;
-      while (accumulatorS >= FIXED_DT && steps < MAX_STEPS_PER_ADVANCE) {
+      // Step listeners see every fixed step; they may pause mid-batch.
+      while (state.isPlaying && accumulatorS >= FIXED_DT && steps < MAX_STEPS_PER_ADVANCE) {
         stepOnce(FIXED_DT);
         accumulatorS -= FIXED_DT;
         steps += 1;
+        emitStep();
       }
       if (steps === MAX_STEPS_PER_ADVANCE) accumulatorS = Math.min(accumulatorS, FIXED_DT);
-      if (steps > 0) {
-        emitStep();
-        syncSnapshot();
-      }
+      // UI snapshot stays batched: at most one React notification per advance().
+      if (steps > 0) syncSnapshot();
       return steps;
     },
 
