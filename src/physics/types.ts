@@ -67,6 +67,14 @@ export interface IceDrivetrainState {
   /** Heat being dissipated in the slipping clutch (W). */
   clutchSlipPowerW: number;
   clutchTempC: number;
+  /** Total heat dumped into the clutch since reset (J). */
+  clutchEnergyJ: number;
+  /**
+   * Gearbox input-shaft speed (rpm): the clutch-disc side. Equals engine rpm
+   * when the clutch is locked; lower while it slips. In N/P it free-spins with
+   * the engine (clutch engaged, gearbox disconnected).
+   */
+  inputShaftRpm: number;
 }
 
 export interface IceVehicleState extends VehicleKinematics, IceDrivetrainState {

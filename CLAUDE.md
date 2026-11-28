@@ -23,6 +23,9 @@ An interactive engineering learning application comparing the torque curves, dri
   - `types.ts` — shared interfaces; `index.ts` — public barrel
 - `src/app/simulation.ts` — the store instance, bound to `requestAnimationFrame` via an injected `FrameScheduler`
 - `src/hooks/` — `useUiSnapshot` (useSyncExternalStore), `useAnimationFrame` (auto-cancelling rAF)
+- `src/components/shared/` — `ControlHeader` (shared sim controls), `format.ts` (per-frame `setText`/`setAttr` helpers)
+- `src/components/modules/DragStripExplorer.tsx` (+ `dragStrip/`) — Module 1
+- `src/components/modules/DrivetrainSimulator.tsx` (+ `drivetrain/`) — Module 2. One rAF loop feeds every renderer via `FrameRegistryContext`; `gearGeometry.ts` (exact tooth ratios + `meshedAngle`), `displayKinematics.ts` (visual slow-motion angles) and `heatColor.ts` are pure TS with tests in `drivetrain/__tests__/`.
 - `workbench.html` — Vite entry. The root `index.html`/`index.js`/`style.css` are the legacy "Animatable" demo; leave them alone.
 
 ## Critical Architectural Invariants

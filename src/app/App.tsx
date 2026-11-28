@@ -1,5 +1,6 @@
 import type { ModuleId } from '../physics';
 import { DragStripExplorer } from '../components/modules/DragStripExplorer';
+import { DrivetrainSimulator } from '../components/modules/DrivetrainSimulator';
 import { useUiSnapshot } from '../hooks/useUiSnapshot';
 import { simulationStore as store } from './simulation';
 
@@ -39,6 +40,8 @@ export function App() {
       <main className="min-w-0">
         {ui.activeModule === 'drag-strip' ? (
           <DragStripExplorer />
+        ) : ui.activeModule === 'drivetrain' ? (
+          <DrivetrainSimulator />
         ) : (
           <div className="rounded-lg border border-dashed border-slate-700 p-10 text-center text-slate-500">
             This module is not built yet. The simulation keeps running in the background.

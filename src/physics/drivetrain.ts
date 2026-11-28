@@ -83,6 +83,8 @@ export function createIceDrivetrainState(): IceDrivetrainState {
     clutchState: 'open',
     clutchSlipPowerW: 0,
     clutchTempC: CLUTCH_AMBIENT_C,
+    clutchEnergyJ: 0,
+    inputShaftRpm: 0,
   };
 }
 
@@ -129,6 +131,7 @@ function computeIceWheelTorque(
       const alpha = Math.min(1, dt / ICE_FREE_REV_TAU_S);
       state.engineRpm = lerp(state.engineRpm, target, alpha);
     }
+    state.inputShaftRpm = state.engineRpm;
     return 0;
   }
 
@@ -157,7 +160,8 @@ function computeIceWheelTorque(
     state.shiftTimerS = 0;
     state.engineTorqueNm = 0;
     state.clutchState = input.clutchMode === 'locked-clutch' ? 'locked' : 'open';
-    state.engineRpm = state.clutchState === 'locked' ? coupled(state.gear) : 0;
+    state.inputShaftRpm = coupled(state.gear);
+    state.engineRpm = state.clutchState === 'locked' ? state.inputShaftRpm : 0;
     return 0;
   }
 
@@ -165,7 +169,9 @@ function computeIceWheelTorque(
   if (state.isShifting) {
     state.shiftTimerS -= dt;
     const progress = clamp01(1 - state.shiftTimerS / ICE_SHIFT_DURATION_S);
-    state.engineRpm = Math.max(ICE_IDLE_RPM, lerp(coupled(state.gear), coupled(state.targetGear), progress));
+    // Synchroniser drags the input shaft from the old gear's speed to the new one's.
+    state.inputShaftRpm = lerp(coupled(state.gear), coupled(state.targetGear), progress);
+    state.engineRpm = Math.max(ICE_IDLE_RPM, state.inputShaftRpm);
     state.engineTorqueNm = 0;
     state.clutchState = 'open';
     if (state.shiftTimerS <= SHIFT_TIMER_EPSILON_S) {
@@ -183,6 +189,7 @@ function computeIceWheelTorque(
       state.targetGear = state.gear + 1;
       state.shiftTimerS = ICE_SHIFT_DURATION_S - dt; // this step is the first interrupted one
       state.engineRpm = coupled(state.gear);
+      state.inputShaftRpm = state.engineRpm;
       state.engineTorqueNm = 0;
       state.clutchState = 'open';
       return 0;
@@ -199,6 +206,7 @@ function computeIceWheelTorque(
 
   const ratio = overall(state.gear);
   const coupledRpm = coupled(state.gear);
+  state.inputShaftRpm = coupledRpm;
   let engineTorque: number;
 
   if (input.clutchMode === 'locked-clutch') {
@@ -235,6 +243,7 @@ function computeIceWheelTorque(
 }
 
 function updateClutchTemperature(state: IceDrivetrainState, dt: number): void {
+  state.clutchEnergyJ = finiteOr(state.clutchEnergyJ + state.clutchSlipPowerW * dt, 0);
   const heating = state.clutchSlipPowerW / CLUTCH_HEAT_CAPACITY_J_PER_K;
   const cooling = (state.clutchTempC - CLUTCH_AMBIENT_C) / CLUTCH_COOLING_TAU_S;
   state.clutchTempC = finiteOr(state.clutchTempC + (heating - cooling) * dt, CLUTCH_AMBIENT_C);

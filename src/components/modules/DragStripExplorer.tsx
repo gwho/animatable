@@ -7,7 +7,7 @@
  */
 import { useUiSnapshot } from '../../hooks/useUiSnapshot';
 import { Panel } from '../ui/controls';
-import { ControlHeader } from './dragStrip/ControlHeader';
+import { ControlHeader } from '../shared/ControlHeader';
 import { DragStrip } from './dragStrip/DragStrip';
 import { TorquePowerPlot } from './dragStrip/TorquePowerPlot';
 

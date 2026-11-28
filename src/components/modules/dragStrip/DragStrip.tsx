@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { UiSnapshot } from '../../../physics';
 import { simulationStore as store } from '../../../app/simulation';
 import { useAnimationFrame } from '../../../hooks/useAnimationFrame';
-import { MPS_TO_KMH, MPS_TO_MPH, formatFixed, formatInt, setAttr, setText } from './format';
+import { MPS_TO_KMH, MPS_TO_MPH, formatFixed, formatInt, setAttr, setText } from '../../shared/format';
 
 export const QUARTER_MILE_M = 400;
 const TRACK_HEIGHT = 168;
